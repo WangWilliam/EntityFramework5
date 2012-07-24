@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Package;Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    
+    <PropertyGroup>
+        <Configuration>Release</Configuration>
+        <Platform>Any CPU</Platform>
+        <SolutionFile>EntityFramework.sln</SolutionFile>
+        <BuildProperties>Configuration=$(Configuration);Platform=$(Platform);RestorePackages=false</BuildProperties>
+    </PropertyGroup>
+
+    <Target Name="Clean">
+        <MSBuild Targets="Clean" 
+                 Projects="$(SolutionFile)" 
+                 Properties="$(BuildProperties)"/>
+    </Target>
+    
+    <Target Name="PreRestorePackages">
+        <ItemGroup>
+            <RestoreCsProjFiles Include="test\EntityFramework\FunctionalTests\*.csproj" />
+        </ItemGroup>
+        <Message Text="Restoring NuGet packages..." Importance="High" />
+    </Target>
+    
+    <Target Name="RestorePackages" DependsOnTargets="PreRestorePackages">
+        <MSBuild Projects="@(RestoreCsProjFiles)" Targets="EnableRestore;RestorePackages" />
+    </Target>
+
+    <Target Name="RestorePackagesSafe" DependsOnTargets="PreRestorePackages">
+        <MSBuild Projects="@(RestoreCsProjFiles)" Targets="RestorePackages" />
+    </Target>
+    
+    <Target Name="Build" DependsOnTargets="RestorePackagesSafe">
+        <MSBuild Targets="Build" 
+                 Projects="$(SolutionFile)"
+                 Properties="$(BuildProperties);BuildPackages=false" />
+    </Target>
+
+    <Target Name="Rebuild" DependsOnTargets="RestorePackagesSafe">
+        <MSBuild Targets="Rebuild" 
+                 Projects="$(SolutionFile)"
+                 Properties="$(BuildProperties);BuildPackages=false" />
+    </Target>
+   
+    <Target Name="Test" DependsOnTargets="Rebuild">
+        <MSBuild Projects="EF.xunit.targets"
+                 Properties="$(BuildProperties)" />
+    </Target>
+
+    <Target Name="Package" DependsOnTargets="Rebuild">
+        <MSBuild Targets="Rebuild"
+                 Projects="src\EntityFramework.PowerShell\EntityFramework.PowerShell.csproj"
+                 Properties="$(BuildProperties);Platform=AnyCPU;DefineConstants=INTERNALS_INVISIBLE;RunCodeAnalysis=false" />
+    </Target>
+
+</Project>
